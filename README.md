@@ -49,21 +49,38 @@ Each agent is a standalone function calling Claude Sonnet via the Anthropic API.
 
 ### Prerequisites
 
-- Node.js 18+
-- Anthropic API key ([get one here](https://console.anthropic.com/))
+- **Node.js 18+** — [download here](https://nodejs.org/)
+- **Anthropic API key** — required to run the AI agents
+
+### How to get your API key
+
+1. Go to [console.anthropic.com](https://console.anthropic.com/) and create an account
+2. Navigate to **Settings > API Keys**
+3. Click **Create Key** and copy the key (starts with `sk-ant-api03-...`)
+4. Add credits in **Settings > Billing** (minimum $5 to start)
+
+> **Important:** The API key is never stored on any server. It stays in your local `.env.local` file (for local dev) or in your Vercel environment variables (for deployment). The `.env.local` file is git-ignored and will never be committed.
 
 ### Installation
 
 ```bash
-git clone https://github.com/CustomDigitalServices-Kevin/pbi-theme-generator.git
-cd pbi-theme-generator
+git clone https://github.com/CustomDigitalServices-Kevin/PBI-Theme-Generator-AI.git
+cd PBI-Theme-Generator-AI
 npm install
-cp .env.example .env
 ```
 
-Edit `.env` and set your API key:
+### Configuration
 
+Copy the example env file and add your API key:
+
+```bash
+cp .env.example .env.local
 ```
+
+Then open `.env.local` and replace the placeholder with your real key:
+
+```env
+# .env.local (this file is git-ignored — your key stays private)
 ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
 ```
 
@@ -81,6 +98,18 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 npm start
 ```
+
+### Deploy on Vercel
+
+1. Fork or clone this repo
+2. Import the project in [Vercel](https://vercel.com/new)
+3. In **Settings > Environment Variables**, add:
+   | Name | Value |
+   |------|-------|
+   | `ANTHROPIC_API_KEY` | `sk-ant-api03-your-key-here` |
+4. Click **Deploy**
+
+> Your API key is encrypted and stored securely by Vercel. It is never exposed in the client-side bundle.
 
 ## Project Structure
 
@@ -152,23 +181,44 @@ npm start
 - **9 langues** — FR, EN, ES, IT, PT, DE, ZH, AR, HI
 - **Téléchargement instantané** — Obtenez un fichier `.json` prêt à importer
 
+### Obtenir une clé API
+
+1. Allez sur [console.anthropic.com](https://console.anthropic.com/) et créez un compte
+2. Allez dans **Settings > API Keys**
+3. Cliquez **Create Key** et copiez la clé (commence par `sk-ant-api03-...`)
+4. Ajoutez des crédits dans **Settings > Billing** (minimum 5$ pour démarrer)
+
+> **Important :** La clé API n'est jamais stockée sur un serveur. Elle reste dans votre fichier `.env.local` (en local) ou dans les variables d'environnement Vercel (en production). Le fichier `.env.local` est ignoré par git et ne sera jamais commité.
+
 ### Installation
 
 ```bash
-git clone https://github.com/CustomDigitalServices-Kevin/pbi-theme-generator.git
-cd pbi-theme-generator
+git clone https://github.com/CustomDigitalServices-Kevin/PBI-Theme-Generator-AI.git
+cd PBI-Theme-Generator-AI
 npm install
-cp .env.example .env
-# Éditez .env avec votre clé API Anthropic
+cp .env.example .env.local
+```
+
+Ouvrez `.env.local` et remplacez le placeholder par votre clé :
+
+```env
+# .env.local (ce fichier est ignoré par git — votre clé reste privée)
+ANTHROPIC_API_KEY=sk-ant-api03-votre-cle-ici
+```
+
+```bash
 npm run dev
 ```
 
 ### Déploiement Vercel
 
-1. Poussez vers GitHub
-2. Importez dans Vercel
-3. Ajoutez `ANTHROPIC_API_KEY` dans les variables d'environnement
-4. Déployez
+1. Forkez ou clonez ce repo
+2. Importez le projet dans [Vercel](https://vercel.com/new)
+3. Dans **Settings > Environment Variables**, ajoutez :
+   | Nom | Valeur |
+   |-----|--------|
+   | `ANTHROPIC_API_KEY` | `sk-ant-api03-votre-cle-ici` |
+4. Cliquez **Deploy**
 
 ---
 
