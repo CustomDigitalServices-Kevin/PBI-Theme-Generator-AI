@@ -10,9 +10,9 @@ Generate Power BI Desktop theme JSON files from a text description or brand imag
 
 - **Text or Image Input** — Describe your brand or upload a logo/style guide
 - **6-Agent AI Pipeline** — Each step handled by a specialized Claude AI agent
-- **WCAG AA Accessible** — Color palettes validated for contrast compliance
+- **WCAG AA Accessible** — Color palettes validated for contrast compliance, and the UI itself (focus rings, ARIA roles, keyboard navigation) targets WCAG AA
 - **Live Preview** — See colors, fonts, and JSON before downloading
-- **9 Languages** — FR, EN, ES, IT, PT, DE, ZH, AR, HI
+- **9 Languages** — FR, EN, ES, IT, PT, DE, ZH, AR, HI (including full RTL support for Arabic)
 - **Instant Download** — Get a ready-to-import `.json` theme file
 
 ## Architecture
@@ -32,24 +32,25 @@ graph TD
     style H fill:#22c55e,color:#fff
 ```
 
-Each agent is a standalone function calling Claude Sonnet via the Anthropic API. The orchestrator chains them via Server-Sent Events for real-time progress tracking.
+Each agent is a standalone function calling the Anthropic API. The model used per agent is centralized in `lib/agents/models.ts`: mechanical steps (input analysis, typography, validation) run on Claude Haiku 4.5 for speed; steps that benefit most from stronger reasoning (color theory, full theme assembly, localized prose) run on Claude Sonnet 5. The orchestrator chains all six agents via Server-Sent Events for real-time progress tracking.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI | React 19 |
 | Language | TypeScript |
-| Styling | Tailwind CSS |
-| AI | Claude Sonnet 4.5 (Anthropic API) |
-| i18n | next-intl (9 languages) |
+| Styling | Tailwind CSS v4 (CSS-first `@theme`) |
+| AI | Claude Haiku 4.5 + Claude Sonnet 5 (Anthropic API), model per agent in `lib/agents/models.ts` |
+| i18n | next-intl v4 (9 languages) |
 | Deployment | Vercel |
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Node.js 18+** — [download here](https://nodejs.org/)
+- **Node.js 20.9+** — [download here](https://nodejs.org/) (required by Next.js 16)
 - **Anthropic API key** — required to run the AI agents
 
 ### How to get your API key
@@ -118,10 +119,11 @@ pbi-theme-generator/
 ├── app/
 │   ├── api/generate/route.ts    # SSE endpoint — orchestrates agents
 │   ├── [locale]/
-│   │   ├── layout.tsx           # Localized root layout
+│   │   ├── layout.tsx           # Localized root layout, self-hosted fonts
 │   │   └── page.tsx             # Main single-page UI
-│   ├── layout.tsx               # Root layout (redirect)
-│   └── globals.css              # Global styles
+│   ├── fonts.ts                 # next/font/google (Inter, JetBrains Mono)
+│   ├── layout.tsx                # Root layout (redirect)
+│   └── globals.css              # Tailwind v4 @theme + global styles
 ├── components/
 │   ├── LanguageSelector.tsx     # 9-language dropdown
 │   ├── InputZone.tsx            # Text/image input toggle
@@ -130,6 +132,7 @@ pbi-theme-generator/
 │   └── JsonPreview.tsx          # Collapsible JSON viewer
 ├── lib/agents/
 │   ├── types.ts                 # Shared TypeScript types
+│   ├── models.ts                # Per-agent model selection (single source of truth)
 │   ├── orchestrator.ts          # Agent pipeline (async generator)
 │   ├── inputAnalyzer.ts         # Agent 1: Brand analysis
 │   ├── colorPalette.ts          # Agent 2: WCAG color palette
@@ -144,7 +147,8 @@ pbi-theme-generator/
 │   ├── en.json
 │   ├── fr.json
 │   └── ...
-├── middleware.ts                 # next-intl locale middleware
+├── proxy.ts                      # next-intl locale proxy (formerly middleware.ts)
+├── eslint.config.mjs             # ESLint flat config
 ├── .env.example
 ├── vercel.json
 └── LICENSE (MIT)
@@ -176,10 +180,25 @@ npm start
 
 - **Saisie texte ou image** — Décrivez votre marque ou uploadez un logo
 - **Pipeline de 6 agents IA** — Chaque étape gérée par un agent Claude spécialisé
-- **Accessibilité WCAG AA** — Palettes de couleurs validées pour le contraste
+- **Accessibilité WCAG AA** — Palettes de couleurs validées pour le contraste, et l'interface elle-même (focus visibles, rôles ARIA, navigation clavier) vise le niveau WCAG AA
 - **Aperçu en direct** — Visualisez couleurs, polices et JSON avant téléchargement
-- **9 langues** — FR, EN, ES, IT, PT, DE, ZH, AR, HI
+- **9 langues** — FR, EN, ES, IT, PT, DE, ZH, AR, HI (support RTL complet pour l'arabe)
 - **Téléchargement instantané** — Obtenez un fichier `.json` prêt à importer
+
+### Stack technique
+
+| Couche | Technologie |
+|--------|-------------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI | React 19 |
+| Style | Tailwind CSS v4 (`@theme` CSS-first) |
+| IA | Claude Haiku 4.5 + Claude Sonnet 5, modèle par agent dans `lib/agents/models.ts` |
+| i18n | next-intl v4 (9 langues) |
+
+### Prérequis
+
+- **Node.js 20.9+** (requis par Next.js 16)
+- **Clé API Anthropic**
 
 ### Obtenir une clé API
 
