@@ -1,5 +1,8 @@
 {
   "subtitle": "Générez des fichiers de thème Power BI à partir d'une description textuelle ou d'une image de marque — propulsé par des agents IA.",
+  "badge_languages": "9 langues",
+  "badge_accessible": "Accessible WCAG AA",
+  "badge_instant": "Téléchargement instantané",
   "input_text": "Texte",
   "input_image": "Image",
   "text_placeholder": "Décrivez votre marque, couleurs ou style... ex. « Startup fintech moderne avec bleu foncé et accents dorés, professionnel et épuré »",

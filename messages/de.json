@@ -1,5 +1,8 @@
 {
   "subtitle": "Erstellen Sie Power BI-Themadateien aus einer Textbeschreibung oder einem Markenbild — unterstützt von KI-Agenten.",
+  "badge_languages": "9 Sprachen",
+  "badge_accessible": "WCAG AA barrierefrei",
+  "badge_instant": "Sofortiger Download",
   "input_text": "Text",
   "input_image": "Bild",
   "text_placeholder": "Beschreiben Sie Ihre Marke, Farben oder Stil... z.B. «Modernes Fintech-Startup mit Dunkelblau und goldenen Akzenten, professionell und klar»",

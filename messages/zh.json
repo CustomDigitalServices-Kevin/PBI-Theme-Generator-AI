@@ -1,5 +1,8 @@
 {
   "subtitle": "通过文本描述或品牌图片生成 Power BI 主题文件 — 由 AI 代理驱动。",
+  "badge_languages": "9 种语言",
+  "badge_accessible": "符合 WCAG AA 无障碍标准",
+  "badge_instant": "即时下载",
   "input_text": "文本",
   "input_image": "图片",
   "text_placeholder": "描述您的品牌、颜色或风格... 例如「现代金融科技初创公司，深蓝色和金色调，专业简洁」",
