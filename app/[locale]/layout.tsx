@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { routing } from '@/i18n/routing'
+import { inter, jetbrainsMono } from '@/app/fonts'
 import '../globals.css'
 
 export function generateStaticParams() {
@@ -23,7 +24,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages()
 
   return (
-    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <html
+      lang={locale}
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <body className="min-h-screen antialiased">
         <NextIntlClientProvider messages={messages}>
           {children}
