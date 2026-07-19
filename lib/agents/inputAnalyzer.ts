@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
+import { brandAnalysisSchema } from './schemas'
 
 const systemPrompt = `You are an expert brand analyst specializing in visual identity for data dashboards. Analyze the user's text description or brand image and extract brand attributes that will drive a Power BI theme's color and typography decisions downstream.
 
@@ -22,29 +22,24 @@ Guidelines:
 Return ONLY the JSON object. No markdown fences, no preamble, no trailing commentary.`
 
 export async function runInputAnalyzer(
-  client: Anthropic,
+  executor: AIExecutor,
   input: string,
   inputType: 'text' | 'image',
   imageBase64?: string
 ): Promise<BrandAnalysis> {
-  const userContent: Anthropic.Messages.ContentBlockParam[] =
+  const userText =
     inputType === 'image' && imageBase64
-      ? [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: 'image/png', data: imageBase64 },
-          },
-          { type: 'text', text: `Analyze this brand image and extract brand attributes. Additional context: ${input || 'No additional context.'}` },
-        ]
-      : [{ type: 'text', text: `Analyze this brand description and extract brand attributes:\n\n"${input}"` }]
+      ? `Analyze this brand image and extract brand attributes. Additional context: ${input || 'No additional context.'}`
+      : `Analyze this brand description and extract brand attributes:\n\n"${input}"`
 
-  const response = await client.messages.create({
-    model: AGENT_MODELS.inputAnalyzer,
-    max_tokens: 500,
+  const text = await executor.complete({
     system: systemPrompt,
-    messages: [{ role: 'user', content: userContent }],
+    userText,
+    imageBase64: inputType === 'image' ? imageBase64 : undefined,
+    maxTokens: 500,
+    schema: brandAnalysisSchema,
+    schemaName: 'brand_analysis',
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<BrandAnalysis>(text)
 }

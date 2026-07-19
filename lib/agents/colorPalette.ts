@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis, ColorPalette } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
+import { colorPaletteSchema } from './schemas'
 
 const systemPrompt = `You are an expert color designer specializing in data visualization and accessibility. Given brand attributes, generate a complete color palette for a Power BI theme.
 
@@ -27,22 +27,14 @@ Return ONLY valid JSON with this exact structure:
   "contrastRatios": [{"color": "#hex", "ratio": 4.5, "passesAA": true}, ...]
 }`
 
-export async function runColorPaletteAgent(
-  client: Anthropic,
-  brand: BrandAnalysis
-): Promise<ColorPalette> {
-  const response = await client.messages.create({
-    model: AGENT_MODELS.colorPalette,
-    max_tokens: 1200,
+export async function runColorPaletteAgent(executor: AIExecutor, brand: BrandAnalysis): Promise<ColorPalette> {
+  const text = await executor.complete({
     system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate an accessible 8-color palette for this brand:\n\nPrimary: ${brand.primaryColor}\nSecondary: ${brand.secondaryColor}\nAccent: ${brand.accentColor}\nTone: ${brand.tone}\nIndustry: ${brand.industry}\nMood: ${brand.mood}`,
-      },
-    ],
+    userText: `Generate an accessible 8-color palette for this brand:\n\nPrimary: ${brand.primaryColor}\nSecondary: ${brand.secondaryColor}\nAccent: ${brand.accentColor}\nTone: ${brand.tone}\nIndustry: ${brand.industry}\nMood: ${brand.mood}`,
+    maxTokens: 1200,
+    schema: colorPaletteSchema,
+    schemaName: 'color_palette',
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<ColorPalette>(text)
 }

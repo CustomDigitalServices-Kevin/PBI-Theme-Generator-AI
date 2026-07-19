@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis, TypographyConfig } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
+import { typographyConfigSchema } from './schemas'
 
 const systemPrompt = `You are a typography expert for data dashboards. Given brand attributes, suggest fonts and sizes compatible with Power BI themes.
 
@@ -22,22 +22,14 @@ Return ONLY valid JSON:
   "labelFontSize": 10
 }`
 
-export async function runTypographyAgent(
-  client: Anthropic,
-  brand: BrandAnalysis
-): Promise<TypographyConfig> {
-  const response = await client.messages.create({
-    model: AGENT_MODELS.typography,
-    max_tokens: 300,
+export async function runTypographyAgent(executor: AIExecutor, brand: BrandAnalysis): Promise<TypographyConfig> {
+  const text = await executor.complete({
     system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Suggest fonts for a ${brand.tone} ${brand.industry} brand with a ${brand.mood} mood. The brand feel: "${brand.description}"`,
-      },
-    ],
+    userText: `Suggest fonts for a ${brand.tone} ${brand.industry} brand with a ${brand.mood} mood. The brand feel: "${brand.description}"`,
+    maxTokens: 300,
+    schema: typographyConfigSchema,
+    schemaName: 'typography_config',
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<TypographyConfig>(text)
 }

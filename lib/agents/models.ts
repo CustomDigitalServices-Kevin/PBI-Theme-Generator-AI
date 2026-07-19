@@ -1,15 +1,19 @@
 /**
- * Central model configuration for the 6-agent pipeline.
+ * Central model configuration for the 6-agent pipeline, across both BYOK
+ * providers.
  *
- * Every agent imports its model id from here instead of hardcoding it,
- * so a model swap (e.g. for cost, latency, or quality reasons) is a
- * one-line change instead of a multi-file search-and-replace.
+ * Mistral (default provider) uses a single model — mistral-small-2603
+ * (Mistral Small 4: hybrid instruct/reasoning/coding, vision, native
+ * structured-output json_schema support) — for every step, per the
+ * advisor-approved plan.
  *
- * Haiku handles structured extraction / mechanical steps; Sonnet
- * handles the steps that benefit most from stronger reasoning
- * (color theory, full theme assembly, localized prose).
+ * Anthropic (alternative provider) keeps the tiering from the original
+ * server-side pipeline: Haiku for mechanical steps, Sonnet for steps
+ * that benefit most from stronger reasoning.
  */
-export const AGENT_MODELS = {
+export const MISTRAL_MODEL = 'mistral-small-2603'
+
+export const ANTHROPIC_AGENT_MODELS = {
   inputAnalyzer: 'claude-haiku-4-5-20251001',
   colorPalette: 'claude-sonnet-5',
   typography: 'claude-haiku-4-5-20251001',
@@ -18,4 +22,8 @@ export const AGENT_MODELS = {
   explainer: 'claude-sonnet-5',
 } as const satisfies Record<string, string>
 
-export type AgentName = keyof typeof AGENT_MODELS
+export type AgentName = keyof typeof ANTHROPIC_AGENT_MODELS
+
+export function modelForAgent(provider: 'mistral' | 'anthropic', agent: AgentName): string {
+  return provider === 'mistral' ? MISTRAL_MODEL : ANTHROPIC_AGENT_MODELS[agent]
+}

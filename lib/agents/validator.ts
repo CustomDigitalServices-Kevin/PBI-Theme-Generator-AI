@@ -1,7 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { PowerBITheme, ValidationResult } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
 
 const systemPrompt = `You are a Power BI theme JSON validator. Check the provided theme JSON against the official Power BI theme specification.
 
@@ -24,22 +23,15 @@ Return ONLY valid JSON:
   "fixedTheme": { ... the corrected theme if there were errors, or the original if valid ... }
 }`
 
-export async function runValidator(
-  client: Anthropic,
-  theme: PowerBITheme
-): Promise<ValidationResult> {
-  const response = await client.messages.create({
-    model: AGENT_MODELS.validator,
-    max_tokens: 4000,
+export async function runValidator(executor: AIExecutor, theme: PowerBITheme): Promise<ValidationResult> {
+  const text = await executor.complete({
     system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Validate this Power BI theme JSON and fix any issues:\n\n${JSON.stringify(theme, null, 2)}`,
-      },
-    ],
+    userText: `Validate this Power BI theme JSON and fix any issues:\n\n${JSON.stringify(theme, null, 2)}`,
+    maxTokens: 4000,
+    schemaName: 'validation_result',
+    // No `schema`: fixedTheme embeds a full PowerBITheme, same open-ended
+    // visualStyles issue as themeBuilder — see lib/agents/schemas.ts.
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<ValidationResult>(text)
 }

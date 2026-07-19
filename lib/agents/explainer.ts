@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis, ColorPalette, TypographyConfig, ThemeExplanation } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
+import { themeExplanationSchema } from './schemas'
 
 const langMap: Record<string, string> = {
   fr: 'French', en: 'English', es: 'Spanish', it: 'Italian',
@@ -13,7 +13,7 @@ function buildSystemPrompt(language: string): string {
 }
 
 export async function runExplainer(
-  client: Anthropic,
+  executor: AIExecutor,
   brand: BrandAnalysis,
   palette: ColorPalette,
   typography: TypographyConfig,
@@ -21,14 +21,9 @@ export async function runExplainer(
 ): Promise<ThemeExplanation> {
   const language = langMap[locale] || 'English'
 
-  const response = await client.messages.create({
-    model: AGENT_MODELS.explainer,
-    max_tokens: 800,
+  const text = await executor.complete({
     system: buildSystemPrompt(language),
-    messages: [
-      {
-        role: 'user',
-        content: `Explain the design choices for this Power BI theme in ${language}:
+    userText: `Explain the design choices for this Power BI theme in ${language}:
 
 Brand: ${brand.tone} / ${brand.industry} / ${brand.mood}
 Data colors: ${JSON.stringify(palette.dataColors)}
@@ -43,10 +38,10 @@ Return JSON:
   "typographyChoices": "Why these fonts and sizes",
   "accessibilityNotes": "Accessibility compliance notes"
 }`,
-      },
-    ],
+    maxTokens: 800,
+    schema: themeExplanationSchema,
+    schemaName: 'theme_explanation',
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<ThemeExplanation>(text)
 }

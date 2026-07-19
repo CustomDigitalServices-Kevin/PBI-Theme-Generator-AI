@@ -1,7 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis, ColorPalette, TypographyConfig, PowerBITheme } from './types'
 import { parseJsonResponse } from './utils'
-import { AGENT_MODELS } from './models'
 
 const systemPrompt = `You are a Power BI theme expert. Assemble a complete Power BI Desktop theme JSON from the provided color palette, typography, and brand data, following the official Power BI Report Theme JSON schema.
 
@@ -21,19 +20,14 @@ visualStyles must follow Power BI's formatting cascade and include at minimum a 
 Return ONLY valid JSON matching the PowerBITheme structure. No markdown, no explanation, no trailing commentary.`
 
 export async function runThemeBuilder(
-  client: Anthropic,
+  executor: AIExecutor,
   brand: BrandAnalysis,
   palette: ColorPalette,
   typography: TypographyConfig
 ): Promise<PowerBITheme> {
-  const response = await client.messages.create({
-    model: AGENT_MODELS.themeBuilder,
-    max_tokens: 3500,
+  const text = await executor.complete({
     system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Build a Power BI theme JSON with these inputs:
+    userText: `Build a Power BI theme JSON with these inputs:
 
 Brand: ${brand.tone} / ${brand.industry} / ${brand.mood}
 Name suggestion: "${brand.description}"
@@ -55,10 +49,11 @@ Typography:
 - headerFontSize: ${typography.headerFontSize}
 - titleFontSize: ${typography.titleFontSize}
 - labelFontSize: ${typography.labelFontSize}`,
-      },
-    ],
+    maxTokens: 3500,
+    schemaName: 'power_bi_theme',
+    // No `schema`: PowerBITheme.visualStyles is an open-ended cascade that
+    // doesn't fit a strict closed schema — see lib/agents/schemas.ts.
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<PowerBITheme>(text)
 }
