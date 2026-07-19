@@ -1,18 +1,24 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { BrandAnalysis, ColorPalette, TypographyConfig, PowerBITheme } from './types'
 import { parseJsonResponse } from './utils'
+import { AGENT_MODELS } from './models'
 
-const systemPrompt = `You are a Power BI theme expert. Assemble a complete Power BI Desktop theme JSON from the provided color palette, typography, and brand data.
+const systemPrompt = `You are a Power BI theme expert. Assemble a complete Power BI Desktop theme JSON from the provided color palette, typography, and brand data, following the official Power BI Report Theme JSON schema.
 
-The theme must follow the official Power BI theme schema exactly. Include:
+Required top-level fields:
 - name, dataColors, background, foreground, tableAccent
-- maximum, center, minimum (for conditional formatting)
+- maximum, center, minimum (gradient extremes for conditional formatting / color scales)
 - header, headerForeground, hyperlink, selection
-- good, neutral, bad (for KPI colors)
-- textClasses with callout, title, header, label
-- visualStyles for common visual types (page, card, slicer)
+- good, neutral, bad (flat hex colors for KPI / conditional formatting semantics — use a green-leaning, amber/gray-leaning, and red-leaning hue respectively, adapted to stay legible against background)
+- textClasses with callout, title, header, label — each an object with fontSize, fontFace, color
 
-Return ONLY valid JSON matching the PowerBITheme structure. No markdown, no explanation.`
+visualStyles must follow Power BI's formatting cascade and include at minimum a wildcard entry:
+- visualStyles["*"]["*"] sets container chrome defaults applied to every visual: title (show, fontSize, fontColor from textClasses.header), border (show: false), dropShadow (show: false), background (transparent or theme background), padding.
+- visualStyles["textbox"]["*"] and visualStyles["image"]["*"] should suppress title, border and background, since those visual types render their own content edge-to-edge.
+- visualStyles["card"]["*"] should style the callout number using textClasses.callout and the category label using textClasses.label.
+- visualStyles["slicer"]["*"] should apply header text from textClasses.header and use tableAccent for the selected-item accent.
+
+Return ONLY valid JSON matching the PowerBITheme structure. No markdown, no explanation, no trailing commentary.`
 
 export async function runThemeBuilder(
   client: Anthropic,
@@ -21,8 +27,8 @@ export async function runThemeBuilder(
   typography: TypographyConfig
 ): Promise<PowerBITheme> {
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 3000,
+    model: AGENT_MODELS.themeBuilder,
+    max_tokens: 3500,
     system: systemPrompt,
     messages: [
       {
