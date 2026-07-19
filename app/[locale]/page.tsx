@@ -3,11 +3,17 @@
 import { useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { LanguageSelector } from '@/components/LanguageSelector'
+import { ModeSelector, type GenerationMode } from '@/components/ModeSelector'
 import { InputZone } from '@/components/InputZone'
 import { PipelineTracker } from '@/components/PipelineTracker'
 import { ColorPreview } from '@/components/ColorPreview'
 import { JsonPreview } from '@/components/JsonPreview'
-import type { AgentStatus, OrchestratorResult } from '@/lib/agents/types'
+import type { AgentStatus, GenerateRequest, OrchestratorResult } from '@/lib/agents/types'
+import type { AIProviderId } from '@/lib/ai/types'
+import { loadCredentials, saveCredentials } from '@/lib/ai/storage'
+import { createExecutorFactory } from '@/lib/ai/createExecutor'
+import { orchestrate } from '@/lib/agents/orchestrator'
+import { generateLocalTheme } from '@/lib/local/generateLocalTheme'
 
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0d]'
@@ -24,9 +30,30 @@ export default function HomePage() {
   const [result, setResult] = useState<OrchestratorResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Generation mode: always defaults to Local on load — the tool never
+  // spends a server-side API key. Provider/key are restored from
+  // sessionStorage (if present) so switching back to AI mode within the
+  // same tab session doesn't require retyping a key.
+  const [mode, setMode] = useState<GenerationMode>('local')
+  const [provider, setProvider] = useState<AIProviderId>(() => loadCredentials()?.provider ?? 'mistral')
+  const [apiKey, setApiKey] = useState<string>(() => loadCredentials()?.apiKey ?? '')
+
+  const handleModeApply = (newMode: GenerationMode, newProvider: AIProviderId, newKey: string) => {
+    setMode(newMode)
+    setProvider(newProvider)
+    setApiKey(newKey)
+    if (newMode === 'ai' && newKey) {
+      saveCredentials(newProvider, newKey)
+    }
+  }
+
   const handleGenerate = async () => {
     if (!input && inputType === 'text') return
     if (!imageBase64 && inputType === 'image') return
+    if (mode === 'ai' && !apiKey) {
+      setError(t('mode_error_no_key'))
+      return
+    }
 
     setIsGenerating(true)
     setResult(null)
@@ -34,54 +61,25 @@ export default function HomePage() {
     setSteps([])
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, inputType, imageBase64, locale }),
-      })
+      const request: GenerateRequest = { input, inputType, imageBase64, locale }
+      const generator =
+        mode === 'local'
+          ? generateLocalTheme(request, t)
+          : orchestrate(createExecutorFactory({ provider, apiKey }), request)
 
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Request failed')
-      }
-
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No stream')
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const data = line.replace(/^data: /, '')
-          if (data === '[DONE]') continue
-          if (!data) continue
-
-          try {
-            const event = JSON.parse(data)
-            if (event.type === 'result') {
-              setResult(event.data)
-            } else if (event.step) {
-              setSteps(prev => {
-                const existing = prev.findIndex(s => s.step === event.step)
-                if (existing >= 0) {
-                  const updated = [...prev]
-                  updated[existing] = event
-                  return updated
-                }
-                return [...prev, event]
-              })
+      for await (const event of generator) {
+        if ('type' in event && event.type === 'result') {
+          setResult(event.data)
+        } else if ('step' in event) {
+          setSteps((prev) => {
+            const existing = prev.findIndex((s) => s.step === event.step)
+            if (existing >= 0) {
+              const updated = [...prev]
+              updated[existing] = event
+              return updated
             }
-          } catch {
-            // skip malformed
-          }
+            return [...prev, event]
+          })
         }
       }
     } catch (e) {
@@ -125,8 +123,9 @@ export default function HomePage() {
     <div className="relative min-h-screen flex flex-col items-center px-4 py-8 sm:py-16 overflow-x-hidden">
       <div className="hero-glow" aria-hidden="true" />
 
-      {/* Language selector */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Language + mode selectors */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <ModeSelector mode={mode} provider={provider} apiKey={apiKey} onApply={handleModeApply} />
         <LanguageSelector />
       </div>
 
@@ -145,7 +144,7 @@ export default function HomePage() {
 
       {/* Trust badges */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-14 animate-fade-in-up">
-        {[t('badge_languages'), t('badge_accessible'), t('badge_instant')].map((label) => (
+        {[t('badge_languages'), t('badge_accessible'), t('badge_local')].map((label) => (
           <span
             key={label}
             className="glass rounded-full px-3.5 py-1.5 text-xs font-medium text-(--text-secondary)"
@@ -165,6 +164,10 @@ export default function HomePage() {
           onImageUpload={handleImageUpload}
           imageBase64={imageBase64}
         />
+
+        {mode === 'local' && inputType === 'text' && (
+          <p className="mt-3 text-xs text-(--text-secondary) text-center">{t('local_text_hint')}</p>
+        )}
 
         {/* Generate button */}
         <button
