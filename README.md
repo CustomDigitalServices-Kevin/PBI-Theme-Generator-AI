@@ -1,65 +1,69 @@
 # PBI Theme Generator AI
 
-Generate Power BI Desktop theme JSON files from a text description or brand image — powered by a multi-agent AI pipeline.
+Generate Power BI Desktop theme JSON files from a text description or brand image. Runs **100% locally in your browser by default** — no AI, no account, no network request. An optional AI mode is available with your own API key (Mistral or Anthropic), sent directly from your browser to the provider.
 
-**[Live Demo](https://pbi-theme-generator.vercel.app)** | [Français](#fr)
+[Français](#fr)
 
 ---
 
 ## Features
 
-- **Text or Image Input** — Describe your brand or upload a logo/style guide
-- **6-Agent AI Pipeline** — Each step handled by a specialized Claude AI agent
-- **WCAG AA Accessible** — Color palettes validated for contrast compliance
-- **Live Preview** — See colors, fonts, and JSON before downloading
-- **9 Languages** — FR, EN, ES, IT, PT, DE, ZH, AR, HI
-- **Instant Download** — Get a ready-to-import `.json` theme file
+- **Local by default, zero network** — a deterministic engine (HSL color math + WCAG contrast + curated typography presets) builds a complete theme entirely in your browser. No data ever leaves your device in this mode.
+- **Optional AI mode (BYOK)** — bring your own Mistral or Anthropic API key for richer, more nuanced results, especially for open-ended text descriptions. The key is sent directly to the provider from your browser and stored only in that tab's session storage — never on any server.
+- **Text or Image Input** — describe your brand, or upload a logo/style guide (dominant colors extracted via Canvas in Local mode; sent as an image to the model in AI mode)
+- **WCAG AA Accessible** — every generated color is verified (and auto-corrected if needed) against the real W3C contrast formula, and the UI itself (focus rings, ARIA roles, keyboard navigation) targets WCAG AA
+- **Live Preview** — see colors, fonts, and JSON before downloading
+- **9 Languages** — FR, EN, ES, IT, PT, DE, ZH, AR, HI (including full RTL support for Arabic)
+- **Fully static** — the whole app builds to static HTML/JS/CSS (`next.config.mjs` → `output: 'export'`); it can be hosted on any static file server, no Node runtime required in production
 
 ## Architecture
 
+Two independent generation pipelines share the same output contract (`PowerBITheme` JSON + `ColorPalette` + localized explanation), so the UI (pipeline tracker, color preview, JSON viewer) works identically regardless of which one ran:
+
 ```mermaid
 graph TD
-    A[User Input<br/>Text or Image] --> B[InputAnalyzerAgent<br/>Brand extraction]
-    B --> C[ColorPaletteAgent<br/>8-color WCAG palette]
-    B --> D[TypographyAgent<br/>Font selection]
-    C --> E[ThemeBuilderAgent<br/>Full JSON assembly]
+    A[User Input<br/>Text or Image] --> M{Mode}
+    M -->|Local, default| L1[textMatch / imageColors<br/>keyword or Canvas color extraction]
+    L1 --> L2[palette.ts<br/>HSL color math + WCAG auto-correction]
+    L2 --> L3[themeBuilder.ts<br/>JSON templating]
+    L3 --> H[Download .json]
+
+    M -->|AI, opt-in with your key| B[InputAnalyzerAgent]
+    B --> C[ColorPaletteAgent]
+    B --> D[TypographyAgent]
+    C --> E[ThemeBuilderAgent]
     D --> E
-    E --> F[ValidatorAgent<br/>Schema validation]
-    F --> G[ExplainerAgent<br/>Localized summary]
-    G --> H[Download .json]
+    E --> F[ValidatorAgent]
+    F --> G[ExplainerAgent]
+    G --> H
 
     style A fill:#6C63FF,color:#fff
     style H fill:#22c55e,color:#fff
 ```
 
-Each agent is a standalone function calling Claude Sonnet via the Anthropic API. The orchestrator chains them via Server-Sent Events for real-time progress tracking.
+**Local mode** (`lib/local/`): a fully deterministic pipeline — no LLM, no network. Color relationships are computed with plain HSL math (`palette.ts`), every color is checked against the official W3C relative luminance formula and auto-adjusted until it clears WCAG AA (`contrast.ts`), and the theme JSON is assembled by templating (`themeBuilder.ts`). Text input is matched against a curated dictionary of named colors, industries, and moods (`textMatch.ts`) — this is keyword matching, not natural language understanding, and the UI says so.
+
+**AI mode** (`lib/agents/` + `lib/ai/`, opt-in, requires your own key): the original 6-agent pipeline, now running entirely client-side. `lib/ai/mistralClient.ts` and `lib/ai/anthropicClient.ts` both implement a shared `AIExecutor` interface so the six agent prompts (unchanged) work with either provider. Mistral (default) uses `mistral-small-2603` for every step with native structured-output JSON Schema support; Anthropic (alternative) keeps the original Haiku/Sonnet tiering, configured in `lib/agents/models.ts`.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router, Turbopack, static export) |
+| UI | React 19 |
 | Language | TypeScript |
-| Styling | Tailwind CSS |
-| AI | Claude Sonnet 4.5 (Anthropic API) |
-| i18n | next-intl (9 languages) |
-| Deployment | Vercel |
+| Styling | Tailwind CSS v4 (CSS-first `@theme`) |
+| Local engine | Pure TypeScript — no dependencies (`lib/local/`) |
+| Optional AI | Mistral (`mistral-small-2603`, default) or Anthropic (Haiku/Sonnet, alternative) — both called directly from the browser with a user-supplied key |
+| i18n | next-intl v4 (9 languages), static export compatible |
+| Testing | Vitest + Testing Library |
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Node.js 18+** — [download here](https://nodejs.org/)
-- **Anthropic API key** — required to run the AI agents
-
-### How to get your API key
-
-1. Go to [console.anthropic.com](https://console.anthropic.com/) and create an account
-2. Navigate to **Settings > API Keys**
-3. Click **Create Key** and copy the key (starts with `sk-ant-api03-...`)
-4. Add credits in **Settings > Billing** (minimum $5 to start)
-
-> **Important:** The API key is never stored on any server. It stays in your local `.env.local` file (for local dev) or in your Vercel environment variables (for deployment). The `.env.local` file is git-ignored and will never be committed.
+- **Node.js 20.9+** — [download here](https://nodejs.org/) (required by Next.js 16)
+- That's it. No API key, no account, no `.env` file needed to run the app in its default mode.
 
 ### Installation
 
@@ -67,103 +71,100 @@ Each agent is a standalone function calling Claude Sonnet via the Anthropic API.
 git clone https://github.com/CustomDigitalServices-Kevin/PBI-Theme-Generator-AI.git
 cd PBI-Theme-Generator-AI
 npm install
-```
-
-### Configuration
-
-Copy the example env file and add your API key:
-
-```bash
-cp .env.example .env.local
-```
-
-Then open `.env.local` and replace the placeholder with your real key:
-
-```env
-# .env.local (this file is git-ignored — your key stays private)
-ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
-```
-
-### Development
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) — Local mode works immediately, no setup required.
 
-### Build
+### Using AI mode (optional)
+
+Click the mode badge in the top-right corner, choose "AI", pick a provider, and paste your own API key:
+
+- **Mistral** — get a key at [console.mistral.ai](https://console.mistral.ai/)
+- **Anthropic** — get a key at [console.anthropic.com](https://console.anthropic.com/)
+
+The key is stored only in your browser tab's session storage (cleared when you close the tab) and is sent directly from your browser to the provider's API — it never passes through any server operated by this project.
+
+### Build (static export)
 
 ```bash
 npm run build
-npm start
 ```
 
-### Deploy on Vercel
+Produces a fully static site in `out/` — every locale is prerendered as its own HTML file (`out/en.html`, `out/fr.html`, ...). Preview it locally with any static server, e.g.:
 
-1. Fork or clone this repo
-2. Import the project in [Vercel](https://vercel.com/new)
-3. In **Settings > Environment Variables**, add:
-   | Name | Value |
-   |------|-------|
-   | `ANTHROPIC_API_KEY` | `sk-ant-api03-your-key-here` |
-4. Click **Deploy**
+```bash
+npx serve out
+# or
+python -m http.server 8080 --directory out
+```
 
-> Your API key is encrypted and stored securely by Vercel. It is never exposed in the client-side bundle.
+### Tests
+
+```bash
+npm test        # run once
+npm run test:watch
+```
+
+### Deployment
+
+The build output (`out/`) is plain static files — deploy it to any static host (nginx on a VPS, Vercel static export, Netlify, GitHub Pages, S3 + CloudFront, ...). No Node.js runtime, no server process, and no environment variables are required in production, since:
+
+- Local mode never leaves the browser.
+- AI mode calls the provider's API directly from the browser using a key the user supplies at runtime — there is nothing for a server to hold or proxy.
+
+## Local mode limitations (be honest about this)
+
+The text-matching engine (`lib/local/textMatch.ts`) is keyword/preset matching against a curated dictionary — roughly a dozen industries, five tones, and ~35 named colors — not natural language understanding. It works well for inputs like `"blue fintech startup, corporate"` and poorly for open-ended prose like `"something that feels like a Sunday morning in autumn"`. The UI displays an honest hint about this next to the text input, and free-form descriptions get noticeably better results in AI mode. Image mode (dominant color extraction via Canvas) has no such limitation — it works the same way regardless of mode.
 
 ## Project Structure
 
 ```
 pbi-theme-generator/
 ├── app/
-│   ├── api/generate/route.ts    # SSE endpoint — orchestrates agents
 │   ├── [locale]/
-│   │   ├── layout.tsx           # Localized root layout
-│   │   └── page.tsx             # Main single-page UI
-│   ├── layout.tsx               # Root layout (redirect)
-│   └── globals.css              # Global styles
+│   │   ├── layout.tsx           # Localized layout, self-hosted fonts, setRequestLocale
+│   │   └── page.tsx             # Main single-page UI — mode dispatch, no fetch/SSE
+│   ├── page.tsx                 # Root '/' — static-export-compatible redirect to defaultLocale
+│   ├── fonts.ts                 # next/font/google (Inter, JetBrains Mono)
+│   ├── layout.tsx               # Root layout (passthrough)
+│   └── globals.css              # Tailwind v4 @theme + global styles
 ├── components/
 │   ├── LanguageSelector.tsx     # 9-language dropdown
+│   ├── ModeSelector.tsx         # Local / AI (BYOK) mode + provider + key panel
 │   ├── InputZone.tsx            # Text/image input toggle
-│   ├── PipelineTracker.tsx      # Real-time 6-step progress
+│   ├── PipelineTracker.tsx      # Real-time 6-step progress (either pipeline)
 │   ├── ColorPreview.tsx         # Color swatch grid
 │   └── JsonPreview.tsx          # Collapsible JSON viewer
-├── lib/agents/
-│   ├── types.ts                 # Shared TypeScript types
-│   ├── orchestrator.ts          # Agent pipeline (async generator)
-│   ├── inputAnalyzer.ts         # Agent 1: Brand analysis
-│   ├── colorPalette.ts          # Agent 2: WCAG color palette
-│   ├── typography.ts            # Agent 3: Font selection
-│   ├── themeBuilder.ts          # Agent 4: JSON assembly
-│   ├── validator.ts             # Agent 5: Schema validation
-│   └── explainer.ts             # Agent 6: Localized summary
+├── lib/local/                    # Deterministic, no-AI generation engine
+│   ├── color.ts                 # hex/RGB/HSL conversions
+│   ├── contrast.ts               # W3C relative luminance + WCAG auto-correction
+│   ├── textMatch.ts              # Keyword/preset matching (text mode)
+│   ├── imageColors.ts            # Canvas dominant-color extraction (image mode)
+│   ├── typography.ts             # Curated font presets per tone
+│   ├── themeBuilder.ts           # PowerBITheme JSON assembly
+│   ├── generateLocalTheme.ts     # Orchestrator (async generator)
+│   └── __tests__/                # 67 vitest tests
+├── lib/agents/                    # AI pipeline (provider-agnostic prompts)
+│   ├── types.ts                 # Shared TypeScript types (both pipelines)
+│   ├── models.ts                # Per-provider, per-agent model selection
+│   ├── schemas.ts                # JSON Schemas for Mistral structured output
+│   ├── orchestrator.ts          # AI pipeline (async generator)
+│   └── {inputAnalyzer,colorPalette,typography,themeBuilder,validator,explainer}.ts
+├── lib/ai/                        # Browser-side AI provider clients (BYOK)
+│   ├── types.ts                 # AIExecutor interface
+│   ├── mistralClient.ts          # Default provider
+│   ├── anthropicClient.ts        # Alternative provider
+│   ├── createExecutor.ts         # Per-agent executor factory
+│   └── storage.ts                # sessionStorage-only credential storage
 ├── i18n/
-│   ├── routing.ts               # Locale routing config
-│   └── request.ts               # Server-side locale resolution
-├── messages/                    # Translation files (9 languages)
-│   ├── en.json
-│   ├── fr.json
-│   └── ...
-├── middleware.ts                 # next-intl locale middleware
-├── .env.example
+│   ├── routing.ts               # Locale routing config (localePrefix: always)
+│   └── request.ts               # Locale resolution
+├── messages/                    # Translation files (9 languages, 56 keys each)
+├── eslint.config.mjs             # ESLint flat config
+├── vitest.config.ts
 ├── vercel.json
 └── LICENSE (MIT)
-```
-
-## Deployment
-
-### Vercel (recommended)
-
-1. Push to GitHub
-2. Import in [Vercel](https://vercel.com)
-3. Add `ANTHROPIC_API_KEY` in Environment Variables
-4. Deploy
-
-### Manual
-
-```bash
-npm run build
-npm start
 ```
 
 ---
@@ -172,23 +173,34 @@ npm start
 
 ## FR — Documentation en français
 
+Génère des fichiers de thème Power BI Desktop à partir d'une description texte ou d'une image de marque. Tourne **100 % localement dans votre navigateur par défaut** — aucune IA, aucun compte, aucune requête réseau. Un mode IA optionnel est disponible avec votre propre clé API (Mistral ou Anthropic), envoyée directement depuis votre navigateur au fournisseur.
+
 ### Fonctionnalités
 
-- **Saisie texte ou image** — Décrivez votre marque ou uploadez un logo
-- **Pipeline de 6 agents IA** — Chaque étape gérée par un agent Claude spécialisé
-- **Accessibilité WCAG AA** — Palettes de couleurs validées pour le contraste
-- **Aperçu en direct** — Visualisez couleurs, polices et JSON avant téléchargement
-- **9 langues** — FR, EN, ES, IT, PT, DE, ZH, AR, HI
-- **Téléchargement instantané** — Obtenez un fichier `.json` prêt à importer
+- **Local par défaut, zéro réseau** — un moteur déterministe (mathématiques de couleur HSL + contraste WCAG + presets typographiques curés) construit un thème complet entièrement dans votre navigateur. Aucune donnée ne quitte votre appareil dans ce mode.
+- **Mode IA optionnel (BYOK)** — apportez votre propre clé API Mistral ou Anthropic pour des résultats plus riches, notamment pour les descriptions textuelles libres. La clé est envoyée directement au fournisseur depuis votre navigateur et stockée uniquement dans la session de cet onglet — jamais sur un serveur.
+- **Saisie texte ou image** — décrivez votre marque, ou uploadez un logo/guide de style
+- **Accessibilité WCAG AA** — chaque couleur générée est vérifiée (et corrigée automatiquement si besoin) selon la formule de contraste W3C réelle
+- **Aperçu en direct** — visualisez couleurs, polices et JSON avant téléchargement
+- **9 langues** — FR, EN, ES, IT, PT, DE, ZH, AR, HI (support RTL complet pour l'arabe)
+- **Entièrement statique** — l'application se compile en HTML/JS/CSS statique, hébergeable sur n'importe quel serveur de fichiers statiques
 
-### Obtenir une clé API
+### Stack technique
 
-1. Allez sur [console.anthropic.com](https://console.anthropic.com/) et créez un compte
-2. Allez dans **Settings > API Keys**
-3. Cliquez **Create Key** et copiez la clé (commence par `sk-ant-api03-...`)
-4. Ajoutez des crédits dans **Settings > Billing** (minimum 5$ pour démarrer)
+| Couche | Technologie |
+|--------|-------------|
+| Framework | Next.js 16 (App Router, Turbopack, export statique) |
+| UI | React 19 |
+| Style | Tailwind CSS v4 (`@theme` CSS-first) |
+| Moteur local | TypeScript pur — zéro dépendance (`lib/local/`) |
+| IA optionnelle | Mistral (`mistral-small-2603`, défaut) ou Anthropic (Haiku/Sonnet, alternatif) — appelés directement depuis le navigateur |
+| i18n | next-intl v4 (9 langues), compatible export statique |
+| Tests | Vitest + Testing Library |
 
-> **Important :** La clé API n'est jamais stockée sur un serveur. Elle reste dans votre fichier `.env.local` (en local) ou dans les variables d'environnement Vercel (en production). Le fichier `.env.local` est ignoré par git et ne sera jamais commité.
+### Prérequis
+
+- **Node.js 20.9+** (requis par Next.js 16)
+- C'est tout. Aucune clé API, aucun compte, aucun fichier `.env` requis pour lancer l'application en mode par défaut.
 
 ### Installation
 
@@ -196,30 +208,38 @@ npm start
 git clone https://github.com/CustomDigitalServices-Kevin/PBI-Theme-Generator-AI.git
 cd PBI-Theme-Generator-AI
 npm install
-cp .env.example .env.local
-```
-
-Ouvrez `.env.local` et remplacez le placeholder par votre clé :
-
-```env
-# .env.local (ce fichier est ignoré par git — votre clé reste privée)
-ANTHROPIC_API_KEY=sk-ant-api03-votre-cle-ici
-```
-
-```bash
 npm run dev
 ```
 
-### Déploiement Vercel
+Ouvrez [http://localhost:3000](http://localhost:3000) — le mode Local fonctionne immédiatement, sans configuration.
 
-1. Forkez ou clonez ce repo
-2. Importez le projet dans [Vercel](https://vercel.com/new)
-3. Dans **Settings > Environment Variables**, ajoutez :
-   | Nom | Valeur |
-   |-----|--------|
-   | `ANTHROPIC_API_KEY` | `sk-ant-api03-votre-cle-ici` |
-4. Cliquez **Deploy**
+### Utiliser le mode IA (optionnel)
+
+Cliquez sur le badge de mode en haut à droite, choisissez « AI », sélectionnez un fournisseur, et collez votre propre clé API :
+
+- **Mistral** — obtenez une clé sur [console.mistral.ai](https://console.mistral.ai/)
+- **Anthropic** — obtenez une clé sur [console.anthropic.com](https://console.anthropic.com/)
+
+La clé est stockée uniquement dans la session de votre onglet (effacée à la fermeture) et envoyée directement depuis votre navigateur à l'API du fournisseur — elle ne transite jamais par un serveur de ce projet.
+
+### Build (export statique)
+
+```bash
+npm run build
+```
+
+Produit un site entièrement statique dans `out/` — chaque langue est prégénérée en fichier HTML dédié (`out/en.html`, `out/fr.html`, ...).
+
+### Tests
+
+```bash
+npm test
+```
+
+### Limites du mode texte local
+
+Le moteur de correspondance textuelle (`lib/local/textMatch.ts`) fonctionne par mots-clés/presets sur un dictionnaire curé — une douzaine de secteurs, cinq tons, ~35 couleurs nommées — ce n'est PAS de la compréhension du langage naturel. Il fonctionne bien pour des entrées comme « blue fintech startup, corporate » et moins bien pour du texte libre ouvert. L'interface affiche une indication honnête à ce sujet ; le mode IA donne de meilleurs résultats pour les descriptions ouvertes.
 
 ---
 
-MIT License — Built with Claude AI
+MIT License

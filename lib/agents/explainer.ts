@@ -1,28 +1,29 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type { AIExecutor } from '../ai/types'
 import type { BrandAnalysis, ColorPalette, TypographyConfig, ThemeExplanation } from './types'
 import { parseJsonResponse } from './utils'
+import { themeExplanationSchema } from './schemas'
+
+const langMap: Record<string, string> = {
+  fr: 'French', en: 'English', es: 'Spanish', it: 'Italian',
+  pt: 'Portuguese', de: 'German', zh: 'Chinese', ar: 'Arabic', hi: 'Hindi',
+}
+
+function buildSystemPrompt(language: string): string {
+  return `You explain Power BI theme design choices in a clear, concise way for a business user, not a designer. Write entirely in ${language} — every field in the response, with no English words mixed in except hex color codes and font names, which stay as-is since they are not translatable. Return ONLY valid JSON, no markdown fences.`
+}
 
 export async function runExplainer(
-  client: Anthropic,
+  executor: AIExecutor,
   brand: BrandAnalysis,
   palette: ColorPalette,
   typography: TypographyConfig,
   locale: string
 ): Promise<ThemeExplanation> {
-  const langMap: Record<string, string> = {
-    fr: 'French', en: 'English', es: 'Spanish', it: 'Italian',
-    pt: 'Portuguese', de: 'German', zh: 'Chinese', ar: 'Arabic', hi: 'Hindi',
-  }
   const language = langMap[locale] || 'English'
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 800,
-    system: `You explain design choices in a clear, concise way. Write in ${language}. Return ONLY valid JSON.`,
-    messages: [
-      {
-        role: 'user',
-        content: `Explain the design choices for this Power BI theme in ${language}:
+  const text = await executor.complete({
+    system: buildSystemPrompt(language),
+    userText: `Explain the design choices for this Power BI theme in ${language}:
 
 Brand: ${brand.tone} / ${brand.industry} / ${brand.mood}
 Data colors: ${JSON.stringify(palette.dataColors)}
@@ -37,10 +38,10 @@ Return JSON:
   "typographyChoices": "Why these fonts and sizes",
   "accessibilityNotes": "Accessibility compliance notes"
 }`,
-      },
-    ],
+    maxTokens: 800,
+    schema: themeExplanationSchema,
+    schemaName: 'theme_explanation',
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   return parseJsonResponse<ThemeExplanation>(text)
 }
