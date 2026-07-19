@@ -30,7 +30,7 @@ export function InputZone({
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             inputType === 'text'
               ? 'bg-brand-500 text-white'
-              : 'text-[var(--text-secondary)] hover:text-white'
+              : 'text-(--text-secondary) hover:text-white'
           }`}
         >
           {t('input_text')}
@@ -40,7 +40,7 @@ export function InputZone({
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             inputType === 'image'
               ? 'bg-brand-500 text-white'
-              : 'text-[var(--text-secondary)] hover:text-white'
+              : 'text-(--text-secondary) hover:text-white'
           }`}
         >
           {t('input_image')}
@@ -54,14 +54,14 @@ export function InputZone({
           onChange={(e) => onInputChange(e.target.value)}
           placeholder={t('text_placeholder')}
           rows={4}
-          className="w-full bg-black/20 border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:outline-none focus:border-brand-500/50 resize-none transition-colors"
+          className="w-full bg-black/20 border border-(--border) rounded-xl px-4 py-3 text-sm text-(--text-primary) placeholder:text-(--text-secondary)/50 focus:outline-none focus:border-brand-500/50 resize-none transition-colors"
         />
       )}
 
       {/* Image upload */}
       {inputType === 'image' && (
         <div className="space-y-3">
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[var(--border)] rounded-xl cursor-pointer hover:border-brand-500/50 transition-colors">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-(--border) rounded-xl cursor-pointer hover:border-brand-500/50 transition-colors">
             {imageBase64 ? (
               <div className="flex items-center gap-3">
                 <img
@@ -74,7 +74,7 @@ export function InputZone({
             ) : (
               <div className="text-center">
                 <p className="text-2xl mb-1">🖼️</p>
-                <p className="text-sm text-[var(--text-secondary)]">{t('image_placeholder')}</p>
+                <p className="text-sm text-(--text-secondary)">{t('image_placeholder')}</p>
               </div>
             )}
             <input
@@ -89,7 +89,7 @@ export function InputZone({
             onChange={(e) => onInputChange(e.target.value)}
             placeholder={t('image_context_placeholder')}
             rows={2}
-            className="w-full bg-black/20 border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:outline-none focus:border-brand-500/50 resize-none transition-colors"
+            className="w-full bg-black/20 border border-(--border) rounded-xl px-4 py-3 text-sm text-(--text-primary) placeholder:text-(--text-secondary)/50 focus:outline-none focus:border-brand-500/50 resize-none transition-colors"
           />
         </div>
       )}

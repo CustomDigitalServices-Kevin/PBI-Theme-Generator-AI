@@ -23,7 +23,7 @@ export function ColorPreview({ palette }: ColorPreviewProps) {
               style={{ backgroundColor: color }}
               title={color}
             />
-            <span className="text-[10px] text-[var(--text-secondary)] font-mono">
+            <span className="text-[10px] text-(--text-secondary) font-mono">
               {color}
             </span>
           </div>
@@ -47,8 +47,8 @@ export function ColorPreview({ palette }: ColorPreviewProps) {
               style={{ backgroundColor: color }}
             />
             <div>
-              <p className="text-xs text-[var(--text-secondary)]">{label}</p>
-              <p className="text-xs font-mono text-[var(--text-primary)]">{color}</p>
+              <p className="text-xs text-(--text-secondary)">{label}</p>
+              <p className="text-xs font-mono text-(--text-primary)">{color}</p>
             </div>
           </div>
         ))}
@@ -56,8 +56,8 @@ export function ColorPreview({ palette }: ColorPreviewProps) {
 
       {/* Accessibility */}
       {palette.contrastRatios.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-[var(--border)]">
-          <p className="text-xs text-[var(--text-secondary)] mb-2">{t('accessibility')}</p>
+        <div className="mt-4 pt-4 border-t border-(--border)">
+          <p className="text-xs text-(--text-secondary) mb-2">{t('accessibility')}</p>
           <div className="flex flex-wrap gap-1.5">
             {palette.contrastRatios.map((cr, i) => (
               <span

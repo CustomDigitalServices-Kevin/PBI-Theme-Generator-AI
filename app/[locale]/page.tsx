@@ -126,12 +126,12 @@ export default function HomePage() {
       {/* Title */}
       <div className="text-center mb-10 sm:mb-16 max-w-2xl">
         <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-3">
-          <span className="bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">
             PBI Theme Generator
           </span>
           <span className="text-brand-300 ml-2 text-2xl sm:text-4xl">AI</span>
         </h1>
-        <p className="text-[var(--text-secondary)] text-sm sm:text-base">
+        <p className="text-(--text-secondary) text-sm sm:text-base">
           {t('subtitle')}
         </p>
       </div>
@@ -151,7 +151,7 @@ export default function HomePage() {
         <button
           onClick={handleGenerate}
           disabled={isGenerating || (!input && inputType === 'text') || (!imageBase64 && inputType === 'image')}
-          className="w-full mt-4 py-3.5 rounded-xl font-semibold text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 animate-pulse-glow disabled:animate-none"
+          className="w-full mt-4 py-3.5 rounded-xl font-semibold text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-linear-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 animate-pulse-glow disabled:animate-none"
         >
           {isGenerating ? t('generating') : t('generate')}
         </button>
@@ -174,10 +174,10 @@ export default function HomePage() {
           {/* Explanation */}
           <div className="glass rounded-2xl p-6">
             <h2 className="text-lg font-semibold mb-3">{t('explanation')}</h2>
-            <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-2">
+            <p className="text-(--text-secondary) text-sm leading-relaxed mb-2">
               {result.explanation.summary}
             </p>
-            <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+            <p className="text-(--text-secondary) text-xs leading-relaxed">
               {result.explanation.accessibilityNotes}
             </p>
           </div>
@@ -192,13 +192,13 @@ export default function HomePage() {
           <div className="flex gap-3">
             <button
               onClick={handleDownload}
-              className="flex-1 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 transition-all"
+              className="flex-1 py-3 rounded-xl font-semibold text-white bg-linear-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 transition-all"
             >
               {t('download')}
             </button>
             <button
               onClick={handleCopy}
-              className="flex-1 py-3 rounded-xl font-semibold text-[var(--text-primary)] glass hover:bg-white/5 transition-all"
+              className="flex-1 py-3 rounded-xl font-semibold text-(--text-primary) glass hover:bg-white/5 transition-all"
             >
               {t('copy')}
             </button>
@@ -207,7 +207,7 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <p className="mt-16 text-[var(--text-secondary)] text-xs">
+      <p className="mt-16 text-(--text-secondary) text-xs">
         {t('footer')}
       </p>
     </div>

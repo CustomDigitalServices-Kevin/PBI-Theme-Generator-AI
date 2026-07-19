@@ -21,14 +21,14 @@ export function JsonPreview({ theme }: JsonPreviewProps) {
         className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors"
       >
         <h2 className="text-lg font-semibold">{t('json_preview')}</h2>
-        <span className="text-[var(--text-secondary)] text-xl">
+        <span className="text-(--text-secondary) text-xl">
           {isExpanded ? '▾' : '▸'}
         </span>
       </button>
 
       {isExpanded && (
         <div className="px-6 pb-6">
-          <pre className="bg-black/30 rounded-xl p-4 overflow-x-auto text-xs font-mono text-[var(--text-secondary)] max-h-[400px] overflow-y-auto">
+          <pre className="bg-black/30 rounded-xl p-4 overflow-x-auto text-xs font-mono text-(--text-secondary) max-h-[400px] overflow-y-auto">
             {json}
           </pre>
         </div>

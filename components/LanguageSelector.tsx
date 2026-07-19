@@ -57,7 +57,7 @@ export function LanguageSelector() {
               key={lang.code}
               onClick={() => switchLocale(lang.code)}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 ${
-                lang.code === locale ? 'text-brand-400' : 'text-[var(--text-secondary)]'
+                lang.code === locale ? 'text-brand-400' : 'text-(--text-secondary)'
               }`}
             >
               <span>{lang.flag}</span>

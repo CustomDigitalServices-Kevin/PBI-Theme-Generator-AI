@@ -34,7 +34,7 @@ export function PipelineTracker({ steps }: PipelineTrackerProps) {
 
   return (
     <div className="glass rounded-2xl p-6">
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
+      <h3 className="text-sm font-semibold text-(--text-secondary) mb-4 uppercase tracking-wide">
         {t('pipeline')}
       </h3>
       <div className="space-y-3">
@@ -56,7 +56,7 @@ export function PipelineTracker({ steps }: PipelineTrackerProps) {
                   <span className="text-red-400 text-lg">✗</span>
                 )}
                 {state === 'pending' && (
-                  <span className="text-[var(--text-secondary)]/30 text-lg">○</span>
+                  <span className="text-(--text-secondary)/30 text-lg">○</span>
                 )}
               </div>
 
@@ -66,15 +66,15 @@ export function PipelineTracker({ steps }: PipelineTrackerProps) {
                   <span className="text-sm">{stepIcons[step]}</span>
                   <span className={`text-sm font-medium ${
                     state === 'running' ? 'text-brand-400' :
-                    state === 'done' ? 'text-[var(--text-primary)]' :
+                    state === 'done' ? 'text-(--text-primary)' :
                     state === 'error' ? 'text-red-400' :
-                    'text-[var(--text-secondary)]/50'
+                    'text-(--text-secondary)/50'
                   }`}>
                     {t(`step_${step.replace('-', '_')}`)}
                   </span>
                 </div>
                 {status?.message && (
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
+                  <p className="text-xs text-(--text-secondary) mt-0.5 truncate">
                     {status.message}
                   </p>
                 )}
