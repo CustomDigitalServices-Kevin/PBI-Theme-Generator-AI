@@ -243,3 +243,8 @@ Le moteur de correspondance textuelle (`lib/local/textMatch.ts`) fonctionne par 
 ---
 
 MIT License
+
+## About
+
+Built and maintained by [Kevin Tomas](https://www.custom-digital-services.com/?utm_source=github&utm_medium=readme&utm_campaign=pbi-theme-generator-ai), freelance Power Platform and Microsoft AI consultant (Custom Digital Services).
+Try it online: [pbi-theme.custom-digital-services.fr](https://pbi-theme.custom-digital-services.fr/?utm_source=github&utm_medium=readme&utm_campaign=pbi-theme-generator-ai). More free tools: [www.custom-digital-services.com/outils](https://www.custom-digital-services.com/outils/?utm_source=github&utm_medium=readme&utm_campaign=pbi-theme-generator-ai)
